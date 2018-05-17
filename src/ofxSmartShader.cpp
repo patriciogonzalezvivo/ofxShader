@@ -29,7 +29,8 @@ void ofxSmartShader::delDefineKeyword(std::string &_define) {
 }
 
 std::string getAbsPath(const std::string& _str) {
-    std::string abs_path = realpath(_str.c_str(), NULL);
+    //std::string abs_path = realpath(_str.c_str(), NULL);
+	std::string abs_path = ofFilePath::getAbsolutePath(_str);
     std::size_t found = abs_path.find_last_of("\\/");
     if (found){
         return abs_path.substr(0, found);
@@ -45,7 +46,7 @@ std::string urlResolve(const std::string& _path, const std::string& _pwd, const 
         return url;
     }
     else {
-        for (uint i = 0; i < _includeFolders.size(); i++) {
+        for (int i = 0; i < _includeFolders.size(); i++) {
             std::string new_path = _includeFolders[i] + "/" + _path;
             if (ofFile(new_path).exists()) {
                 return new_path;
