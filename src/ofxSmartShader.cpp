@@ -4,12 +4,12 @@
 // Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
 ofxSmartShader::ofxSmartShader() {
-	m_bWatchingFiles = false;
+    m_bWatchingFiles = false;
     m_bAutoVersionConversion = true;
 }
 
 ofxSmartShader::~ofxSmartShader() {
-	disableWatchFiles();
+    disableWatchFiles();
 }
 
 void ofxSmartShader::addIncludeFolder(std::string &_folder) {
@@ -21,7 +21,7 @@ void ofxSmartShader::addDefineKeyword(std::string &_define) {
 }
 
 void ofxSmartShader::delDefineKeyword(std::string &_define) {
-    for (int i = m_defines.size() - 1; i >= 0 ; i++) {
+    for (unsigned int i = m_defines.size() - 1; i >= 0 ; i++) {
         if ( m_defines[i] == _define ) {
             m_defines.erase(m_defines.begin() + i);
         }
@@ -29,10 +29,10 @@ void ofxSmartShader::delDefineKeyword(std::string &_define) {
 }
 
 std::string getAbsPath(const std::string& _str) {
-    //std::string abs_path = realpath(_str.c_str(), NULL);
-	std::string abs_path = ofFilePath::getAbsolutePath(_str);
+    // std::string abs_path = realpath(_str.c_str(), NULL);
+	  std::string abs_path = ofFilePath::getAbsolutePath(_str);
     std::size_t found = abs_path.find_last_of("\\/");
-    if (found){
+    if (found) {
         return abs_path.substr(0, found);
     }
     else {
@@ -46,7 +46,7 @@ std::string urlResolve(const std::string& _path, const std::string& _pwd, const 
         return url;
     }
     else {
-        for (int i = 0; i < _includeFolders.size(); i++) {
+        for (unsigned int i = 0; i < _includeFolders.size(); i++) {
             std::string new_path = _includeFolders[i] + "/" + _path;
             if (ofFile(new_path).exists()) {
                 return new_path;
@@ -61,10 +61,11 @@ bool loadFromPath(const std::string& _path, std::string* _into, const std::vecto
     std::string buffer;
     
     file.open(_path.c_str());
-    if(!file.is_open()) return false;
+    if (!file.is_open()) 
+        return false;
     std::string original_path = getAbsPath(_path);
     
-    while(!file.eof()) {
+    while (!file.eof()) {
         getline(file, buffer);
         if (buffer.find("#include ") == 0 || buffer.find("#pragma include ") == 0){
             unsigned begin = buffer.find_first_of("\"");
@@ -73,14 +74,15 @@ bool loadFromPath(const std::string& _path, std::string* _into, const std::vecto
                 std::string file_name = buffer.substr(begin+1,end-begin-1);
                 file_name = urlResolve(file_name, original_path, _includeFolders);
                 std::string newBuffer;
-                if(loadFromPath(file_name, &newBuffer, _includeFolders)){
+                if (loadFromPath(file_name, &newBuffer, _includeFolders)) {
                     (*_into) += "\n" + newBuffer + "\n";
                 }
                 else {
                     std::cout << file_name << " not found at " << original_path << std::endl;
                 }
             }
-        } else {
+        } 
+        else {
             (*_into) += buffer + "\n";
         }
     }
@@ -98,34 +100,34 @@ bool ofxSmartShader::load(string _shaderName ) {
 }
 
 bool ofxSmartShader::load(string _vertName, string _fragName, string _geomName) {
-	unload();
+    unload();
 	
     ofShader::setGeometryOutputCount( m_geometryOutputCount );
     ofShader::setGeometryInputType( m_geometryInputType );
     ofShader::setGeometryOutputType( m_geometryOutputType );
 
-	// hackety hack, clear errors or shader will fail to compile
-	GLuint err = glGetError();
+	  // hackety hack, clear errors or shader will fail to compile
+	  GLuint err = glGetError();
 	
-	m_lastTimeCheckMillis = ofGetElapsedTimeMillis();
-	setMillisBetweenFileCheck( 2 * 1000 );
-	enableWatchFiles();
+	  m_lastTimeCheckMillis = ofGetElapsedTimeMillis();
+	  setMillisBetweenFileCheck( 2 * 1000 );
+	  enableWatchFiles();
 	
-	m_loadShaderNextFrame = false;
+	  m_loadShaderNextFrame = false;
 	
     // Update filenames
-	m_vertexShaderFilename = _vertName;
-	m_fragmentShaderFilename = _fragName;
-	m_geometryShaderFilename = _geomName;
+	  m_vertexShaderFilename = _vertName;
+	  m_fragmentShaderFilename = _fragName;
+	  m_geometryShaderFilename = _geomName;
 	
     // Update last change time
-	m_vertexShaderFile.clear();
-	m_fragmentShaderFile.clear();
-	m_geometryShaderFile.clear();
+	  m_vertexShaderFile.clear();
+	  m_fragmentShaderFile.clear();
+	  m_geometryShaderFile.clear();
 	
-	m_vertexShaderFile   = ofFile( ofToDataPath( m_vertexShaderFilename ) );
-	m_fragmentShaderFile = ofFile( ofToDataPath( m_fragmentShaderFilename ) );
-	m_geometryShaderFile = ofFile( ofToDataPath( m_geometryShaderFilename ) );
+	  m_vertexShaderFile   = ofFile( ofToDataPath( m_vertexShaderFilename ) );
+	  m_fragmentShaderFile = ofFile( ofToDataPath( m_fragmentShaderFilename ) );
+	  m_geometryShaderFile = ofFile( ofToDataPath( m_geometryShaderFilename ) );
     
     m_fileChangedTimes.clear();
     m_fileChangedTimes.push_back( getLastModified( m_vertexShaderFile ) );
@@ -170,7 +172,8 @@ bool ofxSmartShader::load(string _vertName, string _fragName, string _geomName) 
 #ifdef TARGET_OPENGLES
         string version100 = "#ifdef GL_ES\n\
 precision highp float;\n\
-#endif\n";
+#endif\n\
+#define texture(A,B) texture2D(A,B)\n";
         version_vert_header = version100;
         version_frag_header = version100;
 #else
