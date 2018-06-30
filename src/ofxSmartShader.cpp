@@ -188,7 +188,8 @@ out vec4 fragColor;\n";
             version_geom_header = "#version 150\n";
         }
         else {
-            version_vert_header = "#version 120\n";
+            version_vert_header = "#version 120\n\
+#define texture(A,B) texture2D(A,B)\n";
             version_frag_header = "#version 120\n";
             version_geom_header = "#version 120\n";
         }
