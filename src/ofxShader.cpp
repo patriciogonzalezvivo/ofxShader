@@ -1,26 +1,26 @@
 
-#include "ofxSmartShader.h"
+#include "ofxShader.h"
 
 // Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
-ofxShader::ofxSmartShader() {
+ofxShader::ofxShader() {
     m_bWatchingFiles = false;
     m_bAutoVersionConversion = true;
 }
 
-ofxSmartShader::~ofxSmartShader() {
+ofxShader::~ofxShader() {
     disableWatchFiles();
 }
 
-void ofxSmartShader::addIncludeFolder(std::string &_folder) {
+void ofxShader::addIncludeFolder(std::string &_folder) {
     m_includeFolders.push_back(_folder);
 }
 
-void ofxSmartShader::addDefineKeyword(std::string &_define) {
+void ofxShader::addDefineKeyword(std::string &_define) {
     m_defines.push_back(_define);
 }
 
-void ofxSmartShader::delDefineKeyword(std::string &_define) {
+void ofxShader::delDefineKeyword(std::string &_define) {
     for (unsigned int i = m_defines.size() - 1; i >= 0 ; i++) {
         if ( m_defines[i] == _define ) {
             m_defines.erase(m_defines.begin() + i);
@@ -95,11 +95,11 @@ bool haveExt(const std::string& file, const std::string& ext){
     return file.find("."+ext) != std::string::npos;
 }
 
-bool ofxSmartShader::load(string _shaderName ) {
+bool ofxShader::load(string _shaderName ) {
 	return load( _shaderName + ".vert", _shaderName + ".frag", _shaderName + ".geom" );
 }
 
-bool ofxSmartShader::load(string _vertName, string _fragName, string _geomName) {
+bool ofxShader::load(string _vertName, string _fragName, string _geomName) {
     unload();
 	
     ofShader::setGeometryOutputCount( m_geometryOutputCount );
@@ -219,7 +219,7 @@ bool find_id(const std::string& program, const char* id) {
     return std::strstr(program.c_str(), id) != 0;
 }
 
-void ofxSmartShader::_checkActiveUniforms(std::string &_source) {
+void ofxShader::_checkActiveUniforms(std::string &_source) {
     if (!m_time)
         m_time = find_id(_source, "u_time");
     if (!m_date)
@@ -232,7 +232,7 @@ void ofxSmartShader::_checkActiveUniforms(std::string &_source) {
         m_resolution = find_id(_source, "u_resolution");
 }
 
-void ofxSmartShader::begin() {
+void ofxShader::begin() {
     ofShader::begin();
     
     if (m_time)
@@ -254,7 +254,7 @@ void ofxSmartShader::begin() {
         setUniform2f("u_resolution", ofGetWidth(), ofGetHeight());
 }
 
-void ofxSmartShader::_update (ofEventArgs &e) {
+void ofxShader::_update (ofEventArgs &e) {
 	if ( m_loadShaderNextFrame ) {
 		reloadShaders();
 		m_loadShaderNextFrame = false;
@@ -272,39 +272,39 @@ void ofxSmartShader::_update (ofEventArgs &e) {
 	}
 }
 
-bool ofxSmartShader::reloadShaders() {
+bool ofxShader::reloadShaders() {
 	return load( m_vertexShaderFilename,  m_fragmentShaderFilename, m_geometryShaderFilename );
 }
 
-void ofxSmartShader::enableAutoVersionConversion() {
+void ofxShader::enableAutoVersionConversion() {
     if (!m_bAutoVersionConversion) {
         m_loadShaderNextFrame = true;
     }
     m_bAutoVersionConversion = true;
 }
 
-void ofxSmartShader::disableAutoVersionConversion() {
+void ofxShader::disableAutoVersionConversion() {
     if (m_bAutoVersionConversion) {
         m_loadShaderNextFrame = true;
     }
     m_bAutoVersionConversion = false;
 }
 
-void ofxSmartShader::enableWatchFiles() {
+void ofxShader::enableWatchFiles() {
 	if (!m_bWatchingFiles) {
-		ofAddListener( ofEvents().update, this, &ofxSmartShader::_update );
+		ofAddListener( ofEvents().update, this, &ofxShader::_update );
 		m_bWatchingFiles = true;
 	}
 }
 
-void ofxSmartShader::disableWatchFiles() {
+void ofxShader::disableWatchFiles() {
 	if (m_bWatchingFiles) {
-		ofRemoveListener( ofEvents().update, this, &ofxSmartShader::_update );
+		ofRemoveListener( ofEvents().update, this, &ofxShader::_update );
 		m_bWatchingFiles = false;
 	}
 }
 
-bool ofxSmartShader::filesChanged() {
+bool ofxShader::filesChanged() {
 	bool fileChanged = false;
 	
 	if ( m_vertexShaderFile.exists() ) {
@@ -335,7 +335,7 @@ bool ofxSmartShader::filesChanged() {
 	return fileChanged;
 }
 
-std::time_t ofxSmartShader::getLastModified( ofFile& _file ) {
+std::time_t ofxShader::getLastModified( ofFile& _file ) {
 	if ( _file.exists() ) {
         return std::filesystem::last_write_time(_file.path());
 	}
@@ -344,21 +344,21 @@ std::time_t ofxSmartShader::getLastModified( ofFile& _file ) {
 	}
 }
 
-void ofxSmartShader::setMillisBetweenFileCheck( int _millis ) {
+void ofxShader::setMillisBetweenFileCheck( int _millis ) {
 	m_millisBetweenFileCheck = _millis;
 }
 
-void ofxSmartShader::setGeometryInputType( GLenum _type ) {
+void ofxShader::setGeometryInputType( GLenum _type ) {
     ofShader::setGeometryInputType(_type);
     m_geometryInputType = _type;
 }
 
-void ofxSmartShader::setGeometryOutputType( GLenum _type ) {
+void ofxShader::setGeometryOutputType( GLenum _type ) {
     ofShader::setGeometryOutputType(_type);
     m_geometryOutputType = _type;
 }
 
-void ofxSmartShader::setGeometryOutputCount( int _count ) {
+void ofxShader::setGeometryOutputCount( int _count ) {
     ofShader::setGeometryOutputCount(_count);
     m_geometryOutputCount = _count;
 }
