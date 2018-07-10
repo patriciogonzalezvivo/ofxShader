@@ -2,10 +2,10 @@
 
 #include "ofMain.h"
 
-class ofxSmartShader : public ofShader {
+class ofxShader : public ofShader {
 public:
-	ofxSmartShader();
-	virtual ~ofxSmartShader();
+	ofxShader();
+	virtual ~ofxShader();
 	
 	// override the initialisation functions
 	bool    load(string _shaderName);

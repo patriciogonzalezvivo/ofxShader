@@ -3,7 +3,7 @@
 
 // Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
-ofxSmartShader::ofxSmartShader() {
+ofxShader::ofxSmartShader() {
     m_bWatchingFiles = false;
     m_bAutoVersionConversion = true;
 }
