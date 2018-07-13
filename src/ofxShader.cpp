@@ -21,7 +21,7 @@ void ofxShader::addDefineKeyword(std::string &_define) {
 }
 
 void ofxShader::delDefineKeyword(std::string &_define) {
-    for (unsigned int i = m_defines.size() - 1; i >= 0 ; i++) {
+    for (int i = m_defines.size() - 1; i >= 0 ; i++) {
         if ( m_defines[i] == _define ) {
             m_defines.erase(m_defines.begin() + i);
         }
