@@ -22,3 +22,4 @@ This addon helps on the process to write and mantain shaders. Handles for you:
 
   - `uniform vec2 u_mouse;`: mouse pixel coords
 
+**Note**: they only get passed if they are present on the code.
