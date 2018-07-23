@@ -95,6 +95,23 @@ bool haveExt(const std::string& file, const std::string& ext){
     return file.find("."+ext) != std::string::npos;
 }
 
+bool find_id(const std::string& program, const char* id) {
+    return std::strstr(program.c_str(), id) != 0;
+}
+
+void ofxShader::_checkActiveUniforms(std::string &_source) {
+    if (!m_time)
+        m_time = find_id(_source, "u_time");
+    if (!m_date)
+        m_date = find_id(_source, "u_date");
+    if (!m_delta)
+        m_delta = find_id(_source, "u_delta");
+    if (!m_mouse)
+        m_mouse = find_id(_source, "u_mouse");
+    if (!m_resolution)
+        m_resolution = find_id(_source, "u_resolution");
+}
+
 bool ofxShader::load(string _shaderName ) {
 	return load( _shaderName + ".vert", _shaderName + ".frag", _shaderName + ".geom" );
 }
@@ -169,29 +186,49 @@ bool ofxShader::load(string _vertName, string _fragName, string _geomName) {
     string version_geom_header = "";
     
     if (m_bAutoVersionConversion) {
+        
 #ifdef TARGET_OPENGLES
-        string version100 = "#ifdef GL_ES\n\
-precision highp float;\n\
-#endif\n\
-#define texture(A,B) texture2D(A,B)\n";
+//        GLSL 100
+//        ----------------------------------------------
+        string version100 = "#version 100\n";
+        version100 += "#define texture(A,B) texture2D(A,B)\n";
+        
         version_vert_header = version100;
         version_frag_header = version100;
+        
+        if ( !find_id(vertexSrc, "precision ") ) {
+            version_vert_header += "#ifdef GL_ES\n\
+precision highp float;\n\
+#endif\n";
+        }
+        
+        if ( !find_id(fragmentSrc, "precision ") ) {
+            version_frag_header += "#ifdef GL_ES\n\
+precision highp float;\n\
+#endif\n";
+        }
 #else
-        if (ofIsGLProgrammableRenderer()) {
+//        GLSL 120
+//        ----------------------------------------------
+        if ( !ofIsGLProgrammableRenderer() ) {
+            version_vert_header = "#version 120\n\
+            #define texture(A,B) texture2D(A,B)\n";
+            version_frag_header = "#version 120\n";
+            version_geom_header = "#version 120\n";
+        }
+        else {
+//        GLSL 150
+//        ----------------------------------------------
             version_vert_header = "#version 150\n\
 #define attribute in\n\
-#define varying out\n";
+#define varying out\n\
+#define texture2D(A,B) texture(A,B)\n";
             version_frag_header = "#version 150\n\
 #define varying in\n\
 #define gl_FragColor fragColor\n\
+#define texture2D(A,B) texture(A,B)\n\
 out vec4 fragColor;\n";
             version_geom_header = "#version 150\n";
-        }
-        else {
-            version_vert_header = "#version 120\n\
-#define texture(A,B) texture2D(A,B)\n";
-            version_frag_header = "#version 120\n";
-            version_geom_header = "#version 120\n";
         }
 #endif
     }
@@ -213,23 +250,6 @@ out vec4 fragColor;\n";
 	bindDefaults();
 	
 	return linkProgram();
-}
-
-bool find_id(const std::string& program, const char* id) {
-    return std::strstr(program.c_str(), id) != 0;
-}
-
-void ofxShader::_checkActiveUniforms(std::string &_source) {
-    if (!m_time)
-        m_time = find_id(_source, "u_time");
-    if (!m_date)
-        m_date = find_id(_source, "u_date");
-    if (!m_delta)
-        m_delta = find_id(_source, "u_delta");
-    if (!m_mouse)
-        m_mouse = find_id(_source, "u_mouse");
-    if (!m_resolution)
-        m_resolution = find_id(_source, "u_resolution");
 }
 
 void ofxShader::begin() {
