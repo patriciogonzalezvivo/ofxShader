@@ -1,6 +1,8 @@
 
 #include "ofxShader.h"
 
+#define STRINGIFY(A) #A
+
 // Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
 ofxShader::ofxShader() {
@@ -12,15 +14,15 @@ ofxShader::~ofxShader() {
     disableWatchFiles();
 }
 
-void ofxShader::addIncludeFolder(std::string &_folder) {
+void ofxShader::addIncludeFolder(const string &_folder) {
     m_includeFolders.push_back(_folder);
 }
 
-void ofxShader::addDefineKeyword(std::string &_define) {
+void ofxShader::addDefineKeyword(const string &_define) {
     m_defines.push_back(_define);
 }
 
-void ofxShader::delDefineKeyword(std::string &_define) {
+void ofxShader::delDefineKeyword(const string &_define) {
     for (int i = m_defines.size() - 1; i >= 0 ; i++) {
         if ( m_defines[i] == _define ) {
             m_defines.erase(m_defines.begin() + i);
@@ -28,9 +30,9 @@ void ofxShader::delDefineKeyword(std::string &_define) {
     }
 }
 
-std::string getAbsPath(const std::string& _str) {
-    // std::string abs_path = realpath(_str.c_str(), NULL);
-	  std::string abs_path = ofFilePath::getAbsolutePath(_str);
+string getAbsPath(const string& _str) {
+    // string abs_path = realpath(_str.c_str(), NULL);
+	  string abs_path = ofFilePath::getAbsolutePath(_str);
     std::size_t found = abs_path.find_last_of("\\/");
     if (found) {
         return abs_path.substr(0, found);
@@ -40,14 +42,14 @@ std::string getAbsPath(const std::string& _str) {
     }
 }
 
-std::string urlResolve(const std::string& _path, const std::string& _pwd, const std::vector<std::string> _includeFolders) {
-    std::string url = _pwd + '/' + _path;
+string urlResolve(const string& _path, const string& _pwd, const std::vector<string> _includeFolders) {
+    string url = _pwd + '/' + _path;
     if (ofFile(url).exists()) {
         return url;
     }
     else {
         for (unsigned int i = 0; i < _includeFolders.size(); i++) {
-            std::string new_path = _includeFolders[i] + "/" + _path;
+            string new_path = _includeFolders[i] + "/" + _path;
             if (ofFile(new_path).exists()) {
                 return new_path;
             }
@@ -56,14 +58,14 @@ std::string urlResolve(const std::string& _path, const std::string& _pwd, const 
     }
 }
 
-bool loadFromPath(const std::string& _path, std::string* _into, const std::vector<std::string> _includeFolders) {
+bool loadFromPath(const string& _path, string* _into, const std::vector<string> _includeFolders) {
     std::ifstream file;
-    std::string buffer;
+    string buffer;
     
     file.open(_path.c_str());
     if (!file.is_open()) 
         return false;
-    std::string original_path = getAbsPath(_path);
+    string original_path = getAbsPath(_path);
     
     while (!file.eof()) {
         getline(file, buffer);
@@ -71,9 +73,9 @@ bool loadFromPath(const std::string& _path, std::string* _into, const std::vecto
             unsigned begin = buffer.find_first_of("\"");
             unsigned end = buffer.find_last_of("\"");
             if (begin != end) {
-                std::string file_name = buffer.substr(begin+1,end-begin-1);
+                string file_name = buffer.substr(begin+1,end-begin-1);
                 file_name = urlResolve(file_name, original_path, _includeFolders);
-                std::string newBuffer;
+                string newBuffer;
                 if (loadFromPath(file_name, &newBuffer, _includeFolders)) {
                     (*_into) += "\n" + newBuffer + "\n";
                 }
@@ -91,15 +93,15 @@ bool loadFromPath(const std::string& _path, std::string* _into, const std::vecto
     return true;
 }
 
-bool haveExt(const std::string& file, const std::string& ext){
-    return file.find("."+ext) != std::string::npos;
+bool haveExt(const string& file, const string& ext){
+    return file.find("."+ext) != string::npos;
 }
 
-bool find_id(const std::string& program, const char* id) {
+bool find_id(const string& program, const char* id) {
     return std::strstr(program.c_str(), id) != 0;
 }
 
-void ofxShader::_checkActiveUniforms(std::string &_source) {
+void ofxShader::_checkActiveUniforms(string &_source) {
     if (!m_time)
         m_time = find_id(_source, "u_time");
     if (!m_date)
@@ -112,39 +114,39 @@ void ofxShader::_checkActiveUniforms(std::string &_source) {
         m_resolution = find_id(_source, "u_resolution");
 }
 
-bool ofxShader::load(string _shaderName ) {
+bool ofxShader::load(const string &_shaderName ) {
 	return load( _shaderName + ".vert", _shaderName + ".frag", _shaderName + ".geom" );
 }
 
-bool ofxShader::load(string _vertName, string _fragName, string _geomName) {
+bool ofxShader::load(const string &_vertName, const string &_fragName, const string &_geomName) {
     unload();
 	
     ofShader::setGeometryOutputCount( m_geometryOutputCount );
     ofShader::setGeometryInputType( m_geometryInputType );
     ofShader::setGeometryOutputType( m_geometryOutputType );
 
-	  // hackety hack, clear errors or shader will fail to compile
-	  GLuint err = glGetError();
-	
-	  m_lastTimeCheckMillis = ofGetElapsedTimeMillis();
-	  setMillisBetweenFileCheck( 2 * 1000 );
-	  enableWatchFiles();
-	
-	  m_loadShaderNextFrame = false;
-	
+    // hackety hack, clear errors or shader will fail to compile
+    GLuint err = glGetError();
+
+    m_lastTimeCheckMillis = ofGetElapsedTimeMillis();
+    setMillisBetweenFileCheck( 2 * 1000 );
+    enableWatchFiles();
+
+    m_loadShaderNextFrame = false;
+
     // Update filenames
-	  m_vertexShaderFilename = _vertName;
-	  m_fragmentShaderFilename = _fragName;
-	  m_geometryShaderFilename = _geomName;
-	
+    m_vertexShaderFilename = _vertName;
+    m_fragmentShaderFilename = _fragName;
+    m_geometryShaderFilename = _geomName;
+
     // Update last change time
-	  m_vertexShaderFile.clear();
-	  m_fragmentShaderFile.clear();
-	  m_geometryShaderFile.clear();
-	
-	  m_vertexShaderFile   = ofFile( ofToDataPath( m_vertexShaderFilename ) );
-	  m_fragmentShaderFile = ofFile( ofToDataPath( m_fragmentShaderFilename ) );
-	  m_geometryShaderFile = ofFile( ofToDataPath( m_geometryShaderFilename ) );
+    m_vertexShaderFile.clear();
+    m_fragmentShaderFile.clear();
+    m_geometryShaderFile.clear();
+
+    m_vertexShaderFile   = ofFile( ofToDataPath( m_vertexShaderFilename ) );
+    m_fragmentShaderFile = ofFile( ofToDataPath( m_fragmentShaderFilename ) );
+    m_geometryShaderFile = ofFile( ofToDataPath( m_geometryShaderFilename ) );
     
     m_fileChangedTimes.clear();
     m_fileChangedTimes.push_back( getLastModified( m_vertexShaderFile ) );
@@ -152,9 +154,9 @@ bool ofxShader::load(string _vertName, string _fragName, string _geomName) {
     m_fileChangedTimes.push_back( getLastModified( m_geometryShaderFile ) );
     
     // Update Sources
-    std::string vertexSrc = "";
-    std::string fragmentSrc = "";
-    std::string geometrySrc = "";
+    string vertexSrc = "";
+    string fragmentSrc = "";
+    string geometrySrc = "";
     
     // 1. Load shaders resolving #include to nested sources
     loadFromPath( ofToDataPath( m_vertexShaderFilename ), &vertexSrc, m_includeFolders );
@@ -162,9 +164,30 @@ bool ofxShader::load(string _vertName, string _fragName, string _geomName) {
     #ifndef TARGET_OPENGLES
     loadFromPath( ofToDataPath( m_geometryShaderFilename ), &geometrySrc, m_includeFolders );
     #endif
+
+    if (vertexSrc.size() == 0) {
+        vertexSrc = STRINGIFY(
+uniform mat4    modelViewProjectionMatrix;
+
+attribute vec4  position;
+attribute vec4  color;
+attribute vec2  texcoord;
+
+varying vec4    v_position;
+varying vec4    v_color;
+varying vec2    v_texcoord;
+
+void main() {
+    v_position  = position;
+    v_color = color;
+    v_texcoord  = texcoord;
+    gl_Position = modelViewProjectionMatrix * v_position;
+}
+);
+    }
     
     // 2. Add defines
-    std::string defines_header = "";
+    string defines_header = "";
     for (unsigned int i = 0; i < m_defines.size(); i++) {
         defines_header += "#define " + m_defines[i] + "\n";
     }
@@ -249,7 +272,23 @@ out vec4 fragColor;\n";
 
 	bindDefaults();
 	
-	return linkProgram();
+    bool link = linkProgram();
+    ofNotifyEvent(onLoad, link);//, this);
+	return link;;
+}
+
+string ofxShader::getFilename(GLenum _type) const {
+    switch (_type) {
+        case GLenum(GL_FRAGMENT_SHADER):
+            return m_fragmentShaderFilename;
+            break;
+        case GLenum(GL_VERTEX_SHADER):
+            return m_vertexShaderFilename;
+            break;
+        case GLenum(GL_GEOMETRY_SHADER_EXT): 
+            return m_geometryShaderFilename;
+            break;
+    }
 }
 
 void ofxShader::begin() {
@@ -286,6 +325,7 @@ void ofxShader::_update (ofEventArgs &e) {
 	   	!m_loadShaderNextFrame ) {
 		if ( filesChanged() ) {
 			m_loadShaderNextFrame = true;
+            ofNotifyEvent(onChange, m_loadShaderNextFrame, this);
 		}
 		
 		m_lastTimeCheckMillis = currTime;
