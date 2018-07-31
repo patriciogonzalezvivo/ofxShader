@@ -140,34 +140,26 @@ std::vector<std::string> split(const std::string &_string, char _sep) {
     return tokens;
 }
 
-int find( const std::regex &_re, const std::string &_str) {
-    std::vector<std::string> lines = split(_str, '\n');
-    std::smatch match;
-    std::vector<std::string> result;
-
-
-    for (int l = 0; l < lines.size(); l++) {
-        for (int i = 0; i < match.size(); i++) {
-            cout << i << " -> " << std::ssub_match(match[i]).str() << endl;
-        }
-    }
-
-    
-    return result.size();
-}
-
 int ofxShaderSandbox::getTotalBuffers() {
     std::string source = m_shader.getShaderSource(GL_FRAGMENT_SHADER);
 
     std::vector<std::string> lines = split(source, '\n');
     std::vector<std::string> results;
 
-    std::regex re(R"((?:^\s*#if|^\s*#elif)(?:\s+)(defined\s*\(\s*BUFFER_)(\d+)(?:\s*\))|(?:^\s*#ifdef)(?:\s*BUFFER_)(\d+))");
+    std::regex re(R"((?:^\s*#if|^\s*#elif)(?:\s+)(defined\s*\(\s*BUFFER_)(\d+)(?:\s*\))|(?:^\s*#ifdef\s+BUFFER_)(\d+))");
     std::smatch match;
 
     for (int l = 0; l < lines.size(); l++) {
         if (std::regex_search(lines[l], match, re)) {
-            string number = std::ssub_match(match[3]).str();
+
+            for (int i = 0; i < match.size(); i++) {
+                cout << i << " -> " << std::ssub_match(match[i]).str() << endl;
+            }
+
+            string number = std::ssub_match(match[2]).str();
+            if (number.size() == 0) {
+                number = std::ssub_match(match[3]).str();
+            }
 
             bool already = false;
             for (int i = 0; i < results.size(); i++) {
@@ -264,7 +256,7 @@ void ofxShaderSandbox::render() {
         m_buffers_shaders[i].begin();
         
         // Pass textures for the other buffers
-        int textureIndex = 0;
+        int textureIndex = 1;
         for (unsigned int j = 0; j < m_buffers.size(); j++) {
             if (i != j) {
                 m_buffers_shaders[i].setUniformTexture("u_buffer" + ofToString(j), m_buffers[j], textureIndex );
@@ -285,7 +277,7 @@ void ofxShaderSandbox::render() {
     m_fbo.begin();
     m_shader.begin();
 
-    int textureIndex = 0;
+    int textureIndex = 1;
     for (unsigned int i = 0; i < m_buffers.size(); i++) {
         m_shader.setUniformTexture("u_buffer" + ofToString(i), m_buffers[i], textureIndex );
         textureIndex++;
