@@ -2,6 +2,8 @@
 #include <regex>
 
 ofxShaderSandbox::ofxShaderSandbox() {
+    // ofAddListener(m_shader.onChange, this, &ofxShaderSandbox::_reload);
+    ofAddListener(m_shader.onLoad, this, &ofxShaderSandbox::_reload);
 }
 
 ofxShaderSandbox::~ofxShaderSandbox() {
@@ -19,17 +21,12 @@ void ofxShaderSandbox::allocate(int _width, int _height) {
 }
 
 bool ofxShaderSandbox::load(const string &_frag) {
-    // Load the main shader
-    m_shader.load("none.vert", _frag, "none.geom");
-
     // Clear buffers
     m_buffers.clear();
     m_buffers_shaders.clear();
 
-    // update buffers
-    _updateBuffers();
-
-    ofAddListener(m_shader.onChange, this, &ofxShaderSandbox::_reload);
+    // Load the main shader
+    m_shader.load("none.vert", _frag, "none.geom");
 }
 
 void ofxShaderSandbox::_reload(bool &_args) {
@@ -181,7 +178,7 @@ int ofxShaderSandbox::getTotalBuffers() {
 void ofxShaderSandbox::_updateBuffers() {
     int total = getTotalBuffers();
 
-    cout << "TOTAL BUFFERS: " << total << endl; 
+    // cout << "TOTAL BUFFERS: " << total << endl; 
     
     if ( total != m_buffers.size() ) {
         m_buffers.clear();
