@@ -1,6 +1,6 @@
 # ofxShader
 
-This addon helps on the process to write and mantain shaders. Handles for you:
+This class extends from `ofShader` and helps on the process to write and mantain shaders. Handles for you:
 
 * Automatic reloading: it's based on [ofxAutoReloading](https://github.com/andreasmuller/ofxAutoReloadedShader) from [Andreas Muller](http://www.nanikawa.com/).
 
@@ -23,3 +23,8 @@ This addon helps on the process to write and mantain shaders. Handles for you:
   - `uniform vec2 u_mouse;`: mouse pixel coords
 
 **Note**: they only get passed if they are present on the code.
+
+# ofxShaderSandbox
+
+This class set's a `ofFbo` and a `ofxShader` instance inside to Sandbox your shader project to do: simulations or postprocessing filters. It automatically generates multiple buffers following the same pattern propose by [glslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas) and [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer) so all shaders should work on WebGL through [glslCanvas](https://github.com/patriciogonzalezvivo/glslCanvas), the [on line editor](http://editor.thebookofshaders.com/) (source code [here](https://github.com/patriciogonzalezvivo/glslEditor)) or nativelly on on your RaspberryPi, Ubuntu Desktops or MacOS through [glslViewer](https://github.com/patriciogonzalezvivo/glslViewer). Check the example `multiple_buffers` example to see how that works.
+
