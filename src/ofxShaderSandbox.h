@@ -37,8 +37,8 @@ public:
 	virtual void    setUniform4f(const string &_name, const ofFloatColor & v);
 
 	// set a texture reference
-	virtual void    setUniformTexture(const string &_name, const ofBaseHasTexture& img, int textureLocation);
-	virtual void    setUniformTexture(const string &_name, const ofTexture& img, int textureLocation);
+	virtual void    setUniformTexture(const string &_name, ofBaseHasTexture& img);
+	virtual void    setUniformTexture(const string &_name, ofTexture& img);
 
 	virtual void	render();
 

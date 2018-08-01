@@ -117,12 +117,12 @@ void ofxShaderSandbox::setUniform4f(const string &_name, float v1, float v2, flo
     m_uniforms[_name].bInt = false;
 }
 
-void ofxShaderSandbox::setUniformTexture(const string &_name, const ofBaseHasTexture& img, int textureLocation) {
-
+void ofxShaderSandbox::setUniformTexture(const string &_name, ofBaseHasTexture& img) {
+    m_textures[_name] = &img.getTexture();
 }
 
-void ofxShaderSandbox::setUniformTexture(const string &_name, const ofTexture& img, int textureLocation) {
-
+void ofxShaderSandbox::setUniformTexture(const string &_name, ofTexture& img) {
+    m_textures[_name] = &img;
 }
 
 std::vector<std::string> split(const std::string &_string, char _sep) {
@@ -152,9 +152,9 @@ int ofxShaderSandbox::getTotalBuffers() {
     for (int l = 0; l < lines.size(); l++) {
         if (std::regex_search(lines[l], match, re)) {
 
-            for (int i = 0; i < match.size(); i++) {
-                cout << i << " -> " << std::ssub_match(match[i]).str() << endl;
-            }
+            // for (int i = 0; i < match.size(); i++) {
+            //     cout << i << " -> " << std::ssub_match(match[i]).str() << endl;
+            // }
 
             string number = std::ssub_match(match[2]).str();
             if (number.size() == 0) {
@@ -264,6 +264,11 @@ void ofxShaderSandbox::render() {
             }
         }
 
+        for (TextureList::iterator it = m_textures.begin(); it != m_textures.end(); ++it) {
+            m_buffers_shaders[i].setUniformTexture(it->first, *it->second, textureIndex );
+            textureIndex++;
+        }
+
         // Pass all uniforms
         setUniforms(m_buffers_shaders[i], m_uniforms);
         m_buffers_shaders[i].setUniform2f("u_resolution", getWidth(), getHeight());
@@ -280,6 +285,11 @@ void ofxShaderSandbox::render() {
     int textureIndex = 1;
     for (unsigned int i = 0; i < m_buffers.size(); i++) {
         m_shader.setUniformTexture("u_buffer" + ofToString(i), m_buffers[i], textureIndex );
+        textureIndex++;
+    }
+
+    for (TextureList::iterator it = m_textures.begin(); it != m_textures.end(); ++it) {
+        m_shader.setUniformTexture(it->first, *it->second, textureIndex );
         textureIndex++;
     }
 
