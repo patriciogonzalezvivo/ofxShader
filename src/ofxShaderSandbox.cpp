@@ -2,7 +2,7 @@
 #include <regex>
 
 ofxShaderSandbox::ofxShaderSandbox() {
-    // ofAddListener(m_shader.onChange, this, &ofxShaderSandbox::_reload);
+//     ofAddListener(m_shader.onChange, this, &ofxShaderSandbox::_reload);
     ofAddListener(m_shader.onLoad, this, &ofxShaderSandbox::_reload);
 }
 
@@ -27,6 +27,8 @@ bool ofxShaderSandbox::load(const string &_frag) {
 
     // Load the main shader
     m_shader.load("none.vert", _frag, "none.geom");
+    
+    _updateBuffers();
 }
 
 void ofxShaderSandbox::_reload(bool &_args) {
@@ -178,7 +180,7 @@ int ofxShaderSandbox::getTotalBuffers() {
 void ofxShaderSandbox::_updateBuffers() {
     int total = getTotalBuffers();
 
-    // cout << "TOTAL BUFFERS: " << total << endl; 
+//     cout << "TOTAL BUFFERS: " << total << endl; 
     
     if ( total != m_buffers.size() ) {
         m_buffers.clear();
@@ -193,7 +195,7 @@ void ofxShaderSandbox::_updateBuffers() {
             // New SHADER
             ofxShader new_shader = ofxShader();
             new_shader.load("none.vert", m_shader.getFilename(GL_FRAGMENT_SHADER), "none.geom");
-            new_shader.addDefineKeyword("BUFFER_" + ofToString(i));
+            new_shader.addDefineKeyword("BUFFER_" + ofToString(i) + " u_buffer" + ofToString(i) );
             m_buffers_shaders.push_back( new_shader );
         }
 
