@@ -1,8 +1,6 @@
 
 #include "ofxShader.h"
 
-#define STRINGIFY(A) #A
-
 // Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
 ofxShader::ofxShader() {
@@ -126,7 +124,7 @@ bool ofxShader::load(const string &_vertName, const string &_fragName, const str
     ofShader::setGeometryOutputType( m_geometryOutputType );
 
     // hackety hack, clear errors or shader will fail to compile
-    GLuint err = glGetError();
+    // GLuint err = glGetError();
 
     m_lastTimeCheckMillis = ofGetElapsedTimeMillis();
     setMillisBetweenFileCheck( 2 * 1000 );
@@ -166,24 +164,23 @@ bool ofxShader::load(const string &_vertName, const string &_fragName, const str
     #endif
 
     if (vertexSrc.size() == 0) {
-        vertexSrc = STRINGIFY(
-uniform mat4    modelViewProjectionMatrix;
-
-attribute vec4  position;
-attribute vec4  color;
-attribute vec2  texcoord;
-
-varying vec4    v_position;
-varying vec4    v_color;
-varying vec2    v_texcoord;
-
-void main() {
-    v_position  = position;
-    v_color = color;
-    v_texcoord  = texcoord;
-    gl_Position = modelViewProjectionMatrix * v_position;
-}
-);
+        vertexSrc = "\n\
+uniform mat4    modelViewProjectionMatrix;\n\
+\n\
+attribute vec4  position;\n\
+attribute vec4  color;\n\
+attribute vec2  texcoord;\n\
+\n\
+varying vec4    v_position;\n\
+varying vec4    v_color;\n\
+varying vec2    v_texcoord;\n\
+\n\
+void main() {\n\
+    v_position  = position;\n\
+    v_color = color;\n\
+    v_texcoord  = texcoord;\n\
+    gl_Position = modelViewProjectionMatrix * v_position;\n\
+}\n";
     }
     
     // 2. Add defines
@@ -277,17 +274,20 @@ out vec4 fragColor;\n";
 	return link;;
 }
 
-string ofxShader::getFilename(GLenum _type) const {
+std::string ofxShader::getFilename(GLenum _type) {
     switch (_type) {
-        case GLenum(GL_FRAGMENT_SHADER):
+        case GL_FRAGMENT_SHADER:
             return m_fragmentShaderFilename;
             break;
-        case GLenum(GL_VERTEX_SHADER):
+        case GL_VERTEX_SHADER:
             return m_vertexShaderFilename;
             break;
-        case GLenum(GL_GEOMETRY_SHADER_EXT): 
+        case GL_GEOMETRY_SHADER_EXT: 
             return m_geometryShaderFilename;
             break;
+        default:
+             return "";
+             break;
     }
 }
 

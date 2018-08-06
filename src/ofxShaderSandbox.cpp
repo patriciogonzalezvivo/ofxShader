@@ -26,9 +26,10 @@ bool ofxShaderSandbox::load(const string &_frag) {
     m_buffers_shaders.clear();
 
     // Load the main shader
-    m_shader.load("none.vert", _frag, "none.geom");
+   bool rta = m_shader.load("none.vert", _frag, "none.geom");
     
     _updateBuffers();
+    return rta;
 }
 
 void ofxShaderSandbox::_reload(bool &_args) {
@@ -148,7 +149,7 @@ int ofxShaderSandbox::getTotalBuffers() {
     std::regex re(R"((?:^\s*#if|^\s*#elif)(?:\s+)(defined\s*\(\s*BUFFER_)(\d+)(?:\s*\))|(?:^\s*#ifdef\s+BUFFER_)(\d+))");
     std::smatch match;
 
-    for (int l = 0; l < lines.size(); l++) {
+    for (unsigned int l = 0; l < lines.size(); l++) {
         if (std::regex_search(lines[l], match, re)) {
 
             // for (int i = 0; i < match.size(); i++) {
@@ -161,7 +162,7 @@ int ofxShaderSandbox::getTotalBuffers() {
             }
 
             bool already = false;
-            for (int i = 0; i < results.size(); i++) {
+            for (unsigned int i = 0; i < results.size(); i++) {
                 if (results[i] == number) {
                     already = true;
                     break;
@@ -182,7 +183,7 @@ void ofxShaderSandbox::_updateBuffers() {
 
 //     cout << "TOTAL BUFFERS: " << total << endl; 
     
-    if ( total != m_buffers.size() ) {
+    if ( total != int(m_buffers.size()) ) {
         m_buffers.clear();
         m_buffers_shaders.clear();
 
