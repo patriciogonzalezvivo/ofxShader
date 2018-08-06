@@ -31,7 +31,7 @@ public:
     void            addDefineKeyword(const string &_define);
     void            delDefineKeyword(const string &_define);
 
-    string          getFilename(GLenum _type) const;
+    std::string     getFilename(GLenum _type);
     
     void            begin();
 
