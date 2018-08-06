@@ -124,25 +124,10 @@ void ofxShaderSandbox::setUniformTexture(const string &_name, ofTexture& img) {
     m_textures[_name] = &img;
 }
 
-std::vector<std::string> split(const std::string &_string, char _sep) {
-    std::vector<std::string> tokens;
-    std::size_t start = 0, end = 0;
-    while ((end = _string.find(_sep, start)) != std::string::npos) {
-        if (end != start) {
-          tokens.push_back(_string.substr(start, end - start));
-        }
-        start = end + 1;
-    }
-    if (end != start) {
-       tokens.push_back(_string.substr(start));
-    }
-    return tokens;
-}
-
 int ofxShaderSandbox::getTotalBuffers() {
     std::string source = m_shader.getShaderSource(GL_FRAGMENT_SHADER);
 
-    std::vector<std::string> lines = split(source, '\n');
+    std::vector<std::string> lines = ofSplitString(source, "\n");
     std::vector<std::string> results;
 
     std::regex re(R"((?:^\s*#if|^\s*#elif)(?:\s+)(defined\s*\(\s*BUFFER_)(\d+)(?:\s*\))|(?:^\s*#ifdef\s+BUFFER_)(\d+))");
