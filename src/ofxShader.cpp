@@ -282,9 +282,11 @@ std::string ofxShader::getFilename(GLenum _type) {
         case GL_VERTEX_SHADER:
             return m_vertexShaderFilename;
             break;
+    #ifndef TARGET_OPENGLES
         case GL_GEOMETRY_SHADER_EXT: 
             return m_geometryShaderFilename;
             break;
+    #endif
         default:
              return "";
              break;
