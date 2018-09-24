@@ -1,15 +1,15 @@
-#include "ofxShaderSandbox.h"
+#include "ofxShaderFilter.h"
 #include <regex>
 
-ofxShaderSandbox::ofxShaderSandbox() {
-//     ofAddListener(m_shader.onChange, this, &ofxShaderSandbox::_reload);
-    ofAddListener(m_shader.onLoad, this, &ofxShaderSandbox::_reload);
+ofxShaderFilter::ofxShaderFilter() {
+//     ofAddListener(m_shader.onChange, this, &ofxShaderFilter::_reload);
+    ofAddListener(m_shader.onLoad, this, &ofxShaderFilter::_reload);
 }
 
-ofxShaderSandbox::~ofxShaderSandbox() {
+ofxShaderFilter::~ofxShaderFilter() {
 }
 
-void ofxShaderSandbox::allocate(int _width, int _height) {
+void ofxShaderFilter::allocate(int _width, int _height) {
     m_width = _width;
     m_height = _height;
 
@@ -20,7 +20,7 @@ void ofxShaderSandbox::allocate(int _width, int _height) {
     }
 }
 
-bool ofxShaderSandbox::load(const string &_frag) {
+bool ofxShaderFilter::load(const string &_frag) {
     // Clear buffers
     m_buffers.clear();
     m_buffers_shaders.clear();
@@ -32,100 +32,100 @@ bool ofxShaderSandbox::load(const string &_frag) {
     return rta;
 }
 
-void ofxShaderSandbox::_reload(bool &_args) {
+void ofxShaderFilter::_reload(bool &_args) {
     _updateBuffers();
 }
 
 //--------------------------------------------------------------
-void ofxShaderSandbox::setUniform2f(const string &_name, const glm::vec2 & v) {
+void ofxShaderFilter::setUniform2f(const string &_name, const glm::vec2 & v) {
 	setUniform2f(_name, v.x, v.y);
 }
 
 //--------------------------------------------------------------
-void ofxShaderSandbox::setUniform3f(const string &_name, const glm::vec3 & v) {
+void ofxShaderFilter::setUniform3f(const string &_name, const glm::vec3 & v) {
 	setUniform3f(_name, v.x, v.y, v.z);
 }
 
 //--------------------------------------------------------------
-void ofxShaderSandbox::setUniform4f(const string &_name, const glm::vec4 & v) {
+void ofxShaderFilter::setUniform4f(const string &_name, const glm::vec4 & v) {
 	setUniform4f(_name, v.x, v.y, v.z, v.w);
 }
 
 //--------------------------------------------------------------
-void ofxShaderSandbox::setUniform4f(const string &_name, const ofFloatColor & v) {
+void ofxShaderFilter::setUniform4f(const string &_name, const ofFloatColor & v) {
 	setUniform4f(_name, v.r, v.g, v.b, v.a);
 }
 
 // set a single uniform value
-void ofxShaderSandbox::setUniform1i(const string &_name, int v1) {
-    m_uniforms[_name].value[0] = float(v1);
-    m_uniforms[_name].size = 1;
-    m_uniforms[_name].bInt = true;
+void ofxShaderFilter::setUniform1i(const string &_name, int v1) {
+    m_uniformsData[_name].value[0] = float(v1);
+    m_uniformsData[_name].size = 1;
+    m_uniformsData[_name].bInt = true;
 }
 
-void ofxShaderSandbox::setUniform2i(const string &_name, int v1, int v2) {
-    m_uniforms[_name].value[0] = float(v1);
-    m_uniforms[_name].value[1] = float(v2);
-    m_uniforms[_name].size = 2;
-    m_uniforms[_name].bInt = true;
+void ofxShaderFilter::setUniform2i(const string &_name, int v1, int v2) {
+    m_uniformsData[_name].value[0] = float(v1);
+    m_uniformsData[_name].value[1] = float(v2);
+    m_uniformsData[_name].size = 2;
+    m_uniformsData[_name].bInt = true;
 }
 
-void ofxShaderSandbox::setUniform3i(const string &_name, int v1, int v2, int v3) {
-    m_uniforms[_name].value[0] = float(v1);
-    m_uniforms[_name].value[1] = float(v2);
-    m_uniforms[_name].value[2] = float(v3);
-    m_uniforms[_name].size = 3;
-    m_uniforms[_name].bInt = true;
+void ofxShaderFilter::setUniform3i(const string &_name, int v1, int v2, int v3) {
+    m_uniformsData[_name].value[0] = float(v1);
+    m_uniformsData[_name].value[1] = float(v2);
+    m_uniformsData[_name].value[2] = float(v3);
+    m_uniformsData[_name].size = 3;
+    m_uniformsData[_name].bInt = true;
 }
 
-void ofxShaderSandbox::setUniform4i(const string &_name, int v1, int v2, int v3, int v4) {
-    m_uniforms[_name].value[0] = float(v1);
-    m_uniforms[_name].value[1] = float(v2);
-    m_uniforms[_name].value[2] = float(v3);
-    m_uniforms[_name].value[3] = float(v4);
-    m_uniforms[_name].size = 4;
-    m_uniforms[_name].bInt = true;
+void ofxShaderFilter::setUniform4i(const string &_name, int v1, int v2, int v3, int v4) {
+    m_uniformsData[_name].value[0] = float(v1);
+    m_uniformsData[_name].value[1] = float(v2);
+    m_uniformsData[_name].value[2] = float(v3);
+    m_uniformsData[_name].value[3] = float(v4);
+    m_uniformsData[_name].size = 4;
+    m_uniformsData[_name].bInt = true;
 }
 
-void ofxShaderSandbox::setUniform1f(const string &_name, float v1) {
-    m_uniforms[_name].value[0] = v1;
-    m_uniforms[_name].size = 1;
-    m_uniforms[_name].bInt = false;
+void ofxShaderFilter::setUniform1f(const string &_name, float v1) {
+    m_uniformsData[_name].value[0] = v1;
+    m_uniformsData[_name].size = 1;
+    m_uniformsData[_name].bInt = false;
 }
 
-void ofxShaderSandbox::setUniform2f(const string &_name, float v1, float v2) {
-    m_uniforms[_name].value[0] = v1;
-    m_uniforms[_name].value[1] = v2;
-    m_uniforms[_name].size = 2;
-    m_uniforms[_name].bInt = false;
+void ofxShaderFilter::setUniform2f(const string &_name, float v1, float v2) {
+    m_uniformsData[_name].value[0] = v1;
+    m_uniformsData[_name].value[1] = v2;
+    m_uniformsData[_name].size = 2;
+    m_uniformsData[_name].bInt = false;
 }
 
-void ofxShaderSandbox::setUniform3f(const string &_name, float v1, float v2, float v3) {
-    m_uniforms[_name].value[0] = v1;
-    m_uniforms[_name].value[1] = v2;
-    m_uniforms[_name].value[2] = v3;
-    m_uniforms[_name].size = 3;
-    m_uniforms[_name].bInt = false;
+void ofxShaderFilter::setUniform3f(const string &_name, float v1, float v2, float v3) {
+    m_uniformsData[_name].value[0] = v1;
+    m_uniformsData[_name].value[1] = v2;
+    m_uniformsData[_name].value[2] = v3;
+    m_uniformsData[_name].size = 3;
+    m_uniformsData[_name].bInt = false;
 }
 
-void ofxShaderSandbox::setUniform4f(const string &_name, float v1, float v2, float v3, float v4) {
-    m_uniforms[_name].value[0] = v1;
-    m_uniforms[_name].value[1] = v2;
-    m_uniforms[_name].value[2] = v3;
-    m_uniforms[_name].value[3] = v4;
-    m_uniforms[_name].size = 4;
-    m_uniforms[_name].bInt = false;
+void ofxShaderFilter::setUniform4f(const string &_name, float v1, float v2, float v3, float v4) {
+    m_uniformsData[_name].value[0] = v1;
+    m_uniformsData[_name].value[1] = v2;
+    m_uniformsData[_name].value[2] = v3;
+    m_uniformsData[_name].value[3] = v4;
+    m_uniformsData[_name].size = 4;
+    m_uniformsData[_name].bInt = false;
 }
 
-void ofxShaderSandbox::setUniformTexture(const string &_name, ofBaseHasTexture& img) {
+void ofxShaderFilter::setUniformTexture(const string &_name, ofBaseHasTexture& img) {
     m_textures[_name] = &img.getTexture();
 }
 
-void ofxShaderSandbox::setUniformTexture(const string &_name, ofTexture& img) {
+void ofxShaderFilter::setUniformTexture(const string &_name, ofTexture& img) {
     m_textures[_name] = &img;
 }
 
-int ofxShaderSandbox::getTotalBuffers() {
+int ofxShaderFilter::getTotalBuffers() {
     std::string source = m_shader.getShaderSource(GL_FRAGMENT_SHADER);
 
     std::vector<std::string> lines = ofSplitString(source, "\n");
@@ -163,7 +163,7 @@ int ofxShaderSandbox::getTotalBuffers() {
     return results.size();
 }
 
-void ofxShaderSandbox::_updateBuffers() {
+void ofxShaderFilter::_updateBuffers() {
     int total = getTotalBuffers();
 
 //     cout << "TOTAL BUFFERS: " << total << endl; 
@@ -193,8 +193,8 @@ void ofxShaderSandbox::_updateBuffers() {
     }
 }
 
-void setUniforms(ofShader &_shader, UniformList &_uniforms ) {
-    for (UniformList::iterator it = _uniforms.begin(); it != _uniforms.end(); ++it) {
+void setUniforms(ofShader &_shader, UniformDataList &_uniforms ) {
+    for (UniformDataList::iterator it = _uniforms.begin(); it != _uniforms.end(); ++it) {
         // TODO:
         //      - only update on change
         //
@@ -233,7 +233,7 @@ void setUniforms(ofShader &_shader, UniformList &_uniforms ) {
     }
 }
 
-void ofxShaderSandbox::render() {
+void ofxShaderFilter::render() {
 
     // Update buffers
     for (unsigned int i = 0; i < m_buffers.size(); i++) {
@@ -255,7 +255,7 @@ void ofxShaderSandbox::render() {
         }
 
         // Pass all uniforms
-        setUniforms(m_buffers_shaders[i], m_uniforms);
+        setUniforms(m_buffers_shaders[i], m_uniformsData);
         m_buffers_shaders[i].setUniform2f("u_resolution", getWidth(), getHeight());
 
         m_buffers[i].draw(0, 0);
@@ -279,7 +279,7 @@ void ofxShaderSandbox::render() {
     }
 
     // Pass all uniforms
-    setUniforms(m_shader, m_uniforms);
+    setUniforms(m_shader, m_uniformsData);
 
     m_shader.setUniform2f("u_resolution", getWidth(), getHeight());
 
@@ -289,15 +289,15 @@ void ofxShaderSandbox::render() {
     m_fbo.end();
 }
 
-void ofxShaderSandbox::draw(float _x, float _y, float _width, float _height) const {
+void ofxShaderFilter::draw(float _x, float _y, float _width, float _height) const {
     m_fbo.draw(_x, _y, _width, _height);
 }
 
 // ofBaseHasTexture
-ofTexture& ofxShaderSandbox::getTexture() {
+ofTexture& ofxShaderFilter::getTexture() {
     return m_fbo.getTexture();
 }
 
-const ofTexture& ofxShaderSandbox::getTexture() const {
+const ofTexture& ofxShaderFilter::getTexture() const {
     return m_fbo.getTexture();
 }

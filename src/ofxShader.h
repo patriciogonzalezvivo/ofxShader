@@ -1,37 +1,55 @@
 #pragma once
 
 #include "ofMain.h"
+#include <functional>
+#include "ofxTextureCube.h"
+
+struct UniformFunction {
+    UniformFunction() {
+    }
+
+    UniformFunction(std::function<void(ofShader*)> _assign) {
+        assign = _assign;
+    }
+
+    std::function<void(ofShader*)>  assign;
+    bool                            present = true;
+};
+
+typedef map<string, UniformFunction> UniformFunctionsList;
 
 class ofxShader : public ofShader {
 public:
-	ofxShader();
-	virtual ~ofxShader();
-	
-	// override the initialisation functions
-	bool            load(const string &_shaderName);
-	bool            load(const string &_vertName, const string &_fragName, const string &_geomName);
-	
-	bool            reloadShaders();
-	
-	void            enableWatchFiles();
-	void            disableWatchFiles();
+    ofxShader();
+    virtual ~ofxShader();
+    
+    // override the initialisation functions
+    bool            load(const string &_shaderName);
+    bool            load(const string &_vertName, const string &_fragName, const string &_geomName);
+    
+    bool            reloadShaders();
+        
+    void            enableWatchFiles();
+    void            disableWatchFiles();
     
     void            enableAutoVersionConversion();
     void            disableAutoVersionConversion();
-		
-	void            setMillisBetweenFileCheck(int _millis);
+        
+    void            setMillisBetweenFileCheck(int _millis);
     
     void            setGeometryInputType(GLenum _type);
     void            setGeometryOutputType(GLenum _type);
     void            setGeometryOutputCount(int _count);
     void            setConversionVersion(int _version);
+
+    void            setUniformTextureCube(const string & _name, const ofxTextureCube& _cubemap, int _textureLocation) const;
     
     void            addIncludeFolder(const string &_folder);
     
     void            addDefineKeyword(const string &_define);
     void            delDefineKeyword(const string &_define);
 
-    std::string     getFilename(GLenum _type);
+    string          getFilename(GLenum _type);
     
     void            begin();
 
@@ -39,15 +57,19 @@ public:
     ofEvent<bool>   onChange;
     
 protected:
-    void            _update(ofEventArgs &e);
-    void            _checkActiveUniforms(string &_source);
-	
-private:
-    std::time_t     getLastModified(ofFile& _file);
-    bool            filesChanged();
+    void                    _update(ofEventArgs &e);
+
+    vector<string>          m_defines;
+    vector<string>          m_includeFolders;
     
-    vector<string>  m_defines;
-    vector<string>  m_includeFolders;
+    UniformFunctionsList    m_uniformsFunctions;
+
+    double                  m_lastFrame;
+
+private:
+    std::time_t     _getLastModified(ofFile& _file);
+    bool            _filesChanged();
+    
     vector<time_t>  m_fileChangedTimes;
     
     ofFile          m_vertexShaderFile;
@@ -57,8 +79,6 @@ private:
     string          m_vertexShaderFilename;
     string          m_fragmentShaderFilename;
     string          m_geometryShaderFilename;
-
-    double          m_lastFrame;
     
     GLenum          m_geometryInputType;
     GLenum          m_geometryOutputType;
@@ -71,12 +91,6 @@ private:
     bool            m_bAutoVersionConversion;
     bool            m_bWatchingFiles;
     bool            m_loadShaderNextFrame;
-    
-    bool            m_time;
-    bool            m_date;
-    bool            m_delta;
-    bool            m_mouse;
-    bool            m_resolution;
 };
 
 

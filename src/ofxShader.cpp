@@ -1,11 +1,34 @@
-
 #include "ofxShader.h"
-
-// Research https://github.com/cinder/Cinder/blob/master/src/cinder/gl/ShaderPreprocessor.cpp
 
 ofxShader::ofxShader() {
     m_bWatchingFiles = false;
     m_bAutoVersionConversion = true;
+
+    // TIME UNIFORMS
+    //
+    m_uniformsFunctions["u_time"] = UniformFunction( [](ofShader* _shader) {
+        _shader->setUniform1f("u_time", ofGetElapsedTimef());
+    });
+
+    m_uniformsFunctions["u_delta"] = UniformFunction( [this](ofShader* _shader) {
+        double now = ofGetElapsedTimef();
+        _shader->setUniform1f("u_delta", now - m_lastFrame);
+        m_lastFrame = now;
+    });
+
+    m_uniformsFunctions["u_date"] = UniformFunction( [](ofShader* _shader) {
+        _shader->setUniform4f("u_date", ofGetYear(), ofGetMonth(), ofGetDay(), ofGetSeconds());
+    });
+
+    // MOUSE
+    m_uniformsFunctions["u_mouse"] = UniformFunction( [](ofShader* _shader) {
+        _shader->setUniform2f("u_mouse", ofGetMouseX(), ofGetMouseY());
+    } );
+
+    // VIEWPORT
+    m_uniformsFunctions["u_resolution"]= UniformFunction( [](ofShader* _shader) {
+        _shader->setUniform2f("u_resolution", ofGetWidth(), ofGetHeight());
+    });
 }
 
 ofxShader::~ofxShader() {
@@ -30,7 +53,7 @@ void ofxShader::delDefineKeyword(const string &_define) {
 
 string getAbsPath(const string& _str) {
     // string abs_path = realpath(_str.c_str(), NULL);
-	  string abs_path = ofFilePath::getAbsolutePath(_str);
+      string abs_path = ofFilePath::getAbsolutePath(_str);
     std::size_t found = abs_path.find_last_of("\\/");
     if (found) {
         return abs_path.substr(0, found);
@@ -91,34 +114,17 @@ bool loadFromPath(const string& _path, string* _into, const std::vector<string> 
     return true;
 }
 
-bool haveExt(const string& file, const string& ext){
-    return file.find("."+ext) != string::npos;
-}
-
 bool find_id(const string& program, const char* id) {
     return std::strstr(program.c_str(), id) != 0;
 }
 
-void ofxShader::_checkActiveUniforms(string &_source) {
-    if (!m_time)
-        m_time = find_id(_source, "u_time");
-    if (!m_date)
-        m_date = find_id(_source, "u_date");
-    if (!m_delta)
-        m_delta = find_id(_source, "u_delta");
-    if (!m_mouse)
-        m_mouse = find_id(_source, "u_mouse");
-    if (!m_resolution)
-        m_resolution = find_id(_source, "u_resolution");
-}
-
 bool ofxShader::load(const string &_shaderName ) {
-	return load( _shaderName + ".vert", _shaderName + ".frag", _shaderName + ".geom" );
+    return load( _shaderName + ".vert", _shaderName + ".frag", _shaderName + ".geom" );
 }
 
 bool ofxShader::load(const string &_vertName, const string &_fragName, const string &_geomName) {
     unload();
-	
+        
     ofShader::setGeometryOutputCount( m_geometryOutputCount );
     ofShader::setGeometryInputType( m_geometryInputType );
     ofShader::setGeometryOutputType( m_geometryOutputType );
@@ -147,9 +153,9 @@ bool ofxShader::load(const string &_vertName, const string &_fragName, const str
     m_geometryShaderFile = ofFile( ofToDataPath( m_geometryShaderFilename ) );
     
     m_fileChangedTimes.clear();
-    m_fileChangedTimes.push_back( getLastModified( m_vertexShaderFile ) );
-    m_fileChangedTimes.push_back( getLastModified( m_fragmentShaderFile ) );
-    m_fileChangedTimes.push_back( getLastModified( m_geometryShaderFile ) );
+    m_fileChangedTimes.push_back( _getLastModified( m_vertexShaderFile ) );
+    m_fileChangedTimes.push_back( _getLastModified( m_fragmentShaderFile ) );
+    m_fileChangedTimes.push_back( _getLastModified( m_geometryShaderFile ) );
     
     // Update Sources
     string vertexSrc = "";
@@ -191,14 +197,11 @@ void main() {\n\
     defines_header += "#line 0 \n";
     
     // 2. Check active default uniforms
-    m_time = false;
-    m_date = false;
-    m_delta = false;
-    m_mouse = false;
-    m_resolution = false;
-    _checkActiveUniforms(vertexSrc);
-    _checkActiveUniforms(fragmentSrc);
-    _checkActiveUniforms(geometrySrc);
+    for (UniformFunctionsList::iterator it = m_uniformsFunctions.begin(); it != m_uniformsFunctions.end(); ++it) {
+        it->second.present = (  find_id(vertexSrc, it->first.c_str()) != 0 || 
+                                find_id(fragmentSrc, it->first.c_str()) != 0 || 
+                                find_id(geometrySrc, it->first.c_str()) != 0 );
+    }
     
     // 3. Add defines
     string version_vert_header = "";
@@ -242,36 +245,39 @@ precision highp float;\n\
             version_vert_header = "#version 150\n\
 #define attribute in\n\
 #define varying out\n\
-#define texture2D(A,B) texture(A,B)\n";
+#define texture2D(A,B) texture(A,B)\n\
+#define textureCube(TEX, DIRECTION, LOD) texture(TEX, DIRECTION)\n";
             version_frag_header = "#version 150\n\
 #define varying in\n\
 #define gl_FragColor fragColor\n\
 #define texture2D(A,B) texture(A,B)\n\
+#define textureCube(TEX, DIRECTION, LOD) texture(TEX, DIRECTION)\n\
 out vec4 fragColor;\n";
             version_geom_header = "#version 150\n";
         }
 #endif
     }
-	
-	if ( vertexSrc.size() > 0 ) {
-		setupShaderFromSource( GL_VERTEX_SHADER, version_vert_header + defines_header + vertexSrc );
-	}
+        
+    if ( vertexSrc.size() > 0 ) {
+        setupShaderFromSource( GL_VERTEX_SHADER, version_vert_header + defines_header + vertexSrc );
+    }
 
-	if ( fragmentSrc.size() > 0 ) {
-		setupShaderFromSource( GL_FRAGMENT_SHADER, version_frag_header + defines_header + fragmentSrc );
-	}
+    if ( fragmentSrc.size() > 0 ) {
+        setupShaderFromSource( GL_FRAGMENT_SHADER, version_frag_header + defines_header + fragmentSrc );
+    }
+    
 
-	#ifndef TARGET_OPENGLES
-	if ( geometrySrc.size() > 0 ) {
-		setupShaderFromSource( GL_GEOMETRY_SHADER_EXT, version_geom_header + defines_header + geometrySrc );
-	}
-	#endif
+    #ifndef TARGET_OPENGLES
+    if ( geometrySrc.size() > 0 ) {
+        setupShaderFromSource( GL_GEOMETRY_SHADER_EXT, version_geom_header + defines_header + geometrySrc );
+    }
+    #endif
 
-	bindDefaults();
-	
+    bindDefaults();
+        
     bool link = linkProgram();
     ofNotifyEvent(onLoad, link);//, this);
-	return link;;
+    return link;;
 }
 
 std::string ofxShader::getFilename(GLenum _type) {
@@ -293,47 +299,37 @@ std::string ofxShader::getFilename(GLenum _type) {
 
 void ofxShader::begin() {
     ofShader::begin();
-    
-    if (m_time)
-        setUniform1f("u_time", ofGetElapsedTimef());
-    
-    if (m_date)
-        setUniform4f("u_date", ofGetYear(), ofGetMonth(), ofGetDay(), ofGetSeconds());
-    
-    if (m_delta) {
-        double now = ofGetElapsedTimef();
-        setUniform1f("u_delta", now - m_lastFrame);
-        m_lastFrame = now;
+
+    for (UniformFunctionsList::iterator it = m_uniformsFunctions.begin(); it != m_uniformsFunctions.end(); ++it) {
+        if (it->second.present) {
+            if (it->second.assign) {
+                it->second.assign((ofShader*)this);
+            }
+        }
     }
-    
-    if (m_mouse)
-        setUniform2f("u_mouse", ofGetMouseX(), ofGetMouseY());
-    
-    if (m_resolution)
-        setUniform2f("u_resolution", ofGetWidth(), ofGetHeight());
 }
 
 void ofxShader::_update (ofEventArgs &e) {
-	if ( m_loadShaderNextFrame ) {
-		reloadShaders();
-		m_loadShaderNextFrame = false;
-	}
-	
-	int currTime = ofGetElapsedTimeMillis();
-	
-	if (((currTime - m_lastTimeCheckMillis) > m_millisBetweenFileCheck) &&
-	   	!m_loadShaderNextFrame ) {
-		if ( filesChanged() ) {
-			m_loadShaderNextFrame = true;
+    if ( m_loadShaderNextFrame ) {
+        reloadShaders();
+        m_loadShaderNextFrame = false;
+    }
+        
+    int currTime = ofGetElapsedTimeMillis();
+        
+    if (((currTime - m_lastTimeCheckMillis) > m_millisBetweenFileCheck) &&
+        !m_loadShaderNextFrame ) {
+        if ( _filesChanged() ) {
+            m_loadShaderNextFrame = true;
             ofNotifyEvent(onChange, m_loadShaderNextFrame, this);
-		}
-		
-		m_lastTimeCheckMillis = currTime;
-	}
+        }
+        
+        m_lastTimeCheckMillis = currTime;
+    }
 }
 
 bool ofxShader::reloadShaders() {
-	return load( m_vertexShaderFilename,  m_fragmentShaderFilename, m_geometryShaderFilename );
+    return load( m_vertexShaderFilename,  m_fragmentShaderFilename, m_geometryShaderFilename );
 }
 
 void ofxShader::enableAutoVersionConversion() {
@@ -351,61 +347,61 @@ void ofxShader::disableAutoVersionConversion() {
 }
 
 void ofxShader::enableWatchFiles() {
-	if (!m_bWatchingFiles) {
-		ofAddListener( ofEvents().update, this, &ofxShader::_update );
-		m_bWatchingFiles = true;
-	}
+    if (!m_bWatchingFiles) {
+        ofAddListener( ofEvents().update, this, &ofxShader::_update );
+        m_bWatchingFiles = true;
+    }
 }
 
 void ofxShader::disableWatchFiles() {
-	if (m_bWatchingFiles) {
-		ofRemoveListener( ofEvents().update, this, &ofxShader::_update );
-		m_bWatchingFiles = false;
-	}
+    if (m_bWatchingFiles) {
+        ofRemoveListener( ofEvents().update, this, &ofxShader::_update );
+        m_bWatchingFiles = false;
+    }
 }
 
-bool ofxShader::filesChanged() {
-	bool fileChanged = false;
-	
-	if ( m_vertexShaderFile.exists() ) {
-		std::time_t vertexShaderFileLastChangeTime = getLastModified( m_vertexShaderFile );
-		if ( vertexShaderFileLastChangeTime != m_fileChangedTimes.at(0) ) {
-			m_fileChangedTimes.at(0) = vertexShaderFileLastChangeTime;
-			fileChanged = true;
-		}
-	}
-	
-	if ( m_fragmentShaderFile.exists() ) {
-		std::time_t fragmentShaderFileLastChangeTime = getLastModified( m_fragmentShaderFile );
-		if ( fragmentShaderFileLastChangeTime != m_fileChangedTimes.at(1) ) {
-			m_fileChangedTimes.at(1) = fragmentShaderFileLastChangeTime;
-			fileChanged = true;
-		}
-	}
-	
-	
-	if ( m_geometryShaderFile.exists() ) {
-		std::time_t geometryShaderFileLastChangeTime = getLastModified( m_geometryShaderFile );
-		if ( geometryShaderFileLastChangeTime != m_fileChangedTimes.at(2) ) {
-			m_fileChangedTimes.at(2) = geometryShaderFileLastChangeTime;
-			fileChanged = true;
-		}
-	}
-	
-	return fileChanged;
+bool ofxShader::_filesChanged() {
+    bool fileChanged = false;
+        
+    if ( m_vertexShaderFile.exists() ) {
+        std::time_t vertexShaderFileLastChangeTime = _getLastModified( m_vertexShaderFile );
+        if ( vertexShaderFileLastChangeTime != m_fileChangedTimes.at(0) ) {
+            m_fileChangedTimes.at(0) = vertexShaderFileLastChangeTime;
+            fileChanged = true;
+        }
+    }
+        
+    if ( m_fragmentShaderFile.exists() ) {
+        std::time_t fragmentShaderFileLastChangeTime = _getLastModified( m_fragmentShaderFile );
+        if ( fragmentShaderFileLastChangeTime != m_fileChangedTimes.at(1) ) {
+            m_fileChangedTimes.at(1) = fragmentShaderFileLastChangeTime;
+            fileChanged = true;
+        }
+    }
+        
+        
+    if ( m_geometryShaderFile.exists() ) {
+        std::time_t geometryShaderFileLastChangeTime = _getLastModified( m_geometryShaderFile );
+        if ( geometryShaderFileLastChangeTime != m_fileChangedTimes.at(2) ) {
+            m_fileChangedTimes.at(2) = geometryShaderFileLastChangeTime;
+            fileChanged = true;
+        }
+    }
+        
+    return fileChanged;
 }
 
-std::time_t ofxShader::getLastModified( ofFile& _file ) {
-	if ( _file.exists() ) {
+std::time_t ofxShader::_getLastModified( ofFile& _file ) {
+    if ( _file.exists() ) {
         return std::filesystem::last_write_time(_file.path());
-	}
-	else {
-		return 0;
-	}
+    }
+    else {
+        return 0;
+    }
 }
 
 void ofxShader::setMillisBetweenFileCheck( int _millis ) {
-	m_millisBetweenFileCheck = _millis;
+    m_millisBetweenFileCheck = _millis;
 }
 
 void ofxShader::setGeometryInputType( GLenum _type ) {
@@ -421,4 +417,13 @@ void ofxShader::setGeometryOutputType( GLenum _type ) {
 void ofxShader::setGeometryOutputCount( int _count ) {
     ofShader::setGeometryOutputCount(_count);
     m_geometryOutputCount = _count;
+}
+
+
+void ofxShader::setUniformTextureCube(const string & _name, const ofxTextureCube& _cubemap, int _textureLocation) const {
+    glActiveTexture(GL_TEXTURE0 + _textureLocation);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _cubemap.getId());
+
+    setUniform1i(_name, _textureLocation);
+    glActiveTexture(GL_TEXTURE0);
 }

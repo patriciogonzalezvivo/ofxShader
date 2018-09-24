@@ -2,7 +2,7 @@
 
 #include "ofMain.h"
 
-#include "ofxShaderSandbox.h"
+#include "ofxShaderFilter.h"
 
 class ofApp : public ofBaseApp{
 public:
@@ -22,5 +22,5 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
 		
-    ofxShaderSandbox    sandbox;
+    ofxShaderFilter    sandbox;
 };
