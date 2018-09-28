@@ -80,7 +80,7 @@ struct Face {
             type = GL_UNSIGNED_BYTE;
         }
         
-    #ifndef PLATFORM_RPI
+    #ifndef TARGET_OPENGLES
         GLenum InternalFormat = GL_RGB16F_ARB;
     #else
         GLenum InternalFormat = GL_RGB;

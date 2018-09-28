@@ -123,7 +123,7 @@ void splitFacesHorizontal(T *_data, int _width, int _height, Face<T> **_faces ) 
 // From
 // https://github.com/dariomanesku/cmft/blob/master/src/cmft/image.cpp#L3124
 template <typename T> 
-void splitFacesFromEquilateral(T *_data, int _width, int _height, Face<T> **_faces ) {
+void splitFacesFromEquilateral(T *_data, unsigned int _width, unsigned int _height, Face<T> **_faces ) {
     // Alloc data.
     const uint32_t faceWidth = (_height + 1)/2;
     const uint32_t faceHeight = faceWidth;
@@ -225,7 +225,7 @@ bool ofxTextureCube::load(const std::string &_path, bool _vFlip) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-#ifndef PLATFORM_RPI
+#ifndef TARGET_OPENGLES
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 #endif
 
