@@ -15,6 +15,10 @@
 
 #define USE_BILINEAR_INTERPOLATION
 
+extern "C" {
+#include "skylight/ArHosekSkyModel.h"
+}
+
 // A few useful utilities from Filament
 // https://github.com/google/filament/blob/master/tools/cmgen/src/CubemapSH.cpp
 // -----------------------------------------------------------------------------------------------
@@ -23,6 +27,8 @@ ofxTextureCube::ofxTextureCube()
 : SH {  glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0),
         glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0),
         glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0) } {
+
+    m_debugInit = false;
 }
 
 ofxTextureCube::~ofxTextureCube() {
@@ -230,91 +236,194 @@ bool ofxTextureCube::load(const std::string &_path, bool _vFlip) {
 #endif
 
     int sh_samples = 0;
-    // if (haveExt(_path,"png") || haveExt(_path,"PNG") ||
-    //     haveExt(_path,"jpg") || haveExt(_path,"JPG") ||
-    //     haveExt(_path,"jpeg") || haveExt(_path,"JPEG")) {
 
-        // unsigned char* data = loadPixels(_path, &m_width, &m_height, RGB, false);
-        ofPixels pixels;
-        ofLoadImage(pixels, _path);
-        m_width = pixels.getWidth();
-        m_height = pixels.getHeight();
-        unsigned char* data = pixels.getData();
-        // cout << pixels.getBitsPerPixel() << endl;
+    // unsigned char* data = loadPixels(_path, &m_width, &m_height, RGB, false);
+    ofPixels pixels;
+    ofLoadImage(pixels, _path);
+    m_width = pixels.getWidth();
+    m_height = pixels.getHeight();
+    unsigned char* data = pixels.getData();
+    // cout << pixels.getBitsPerPixel() << endl;
 
-        // LOAD FACES
-        Face<unsigned char> **faces = new Face<unsigned char>*[6];
+    // LOAD FACES
+    Face<unsigned char> **faces = new Face<unsigned char>*[6];
 
-        if (m_height > m_width) {
-            splitFacesVertical<unsigned char>(data, m_width, m_height, faces);
+    if (m_height > m_width) {
+        splitFacesVertical<unsigned char>(data, m_width, m_height, faces);
 
-            // adjust NEG_Z face
-            if (_vFlip) {
-                faces[5]->flipHorizontal();
-                faces[5]->flipVertical();
-            }
+        // adjust NEG_Z face
+        if (_vFlip) {
+            faces[5]->flipHorizontal();
+            faces[5]->flipVertical();
+        }
+    }
+    else {
+        if (m_width/2 == m_height)  {
+            splitFacesFromEquilateral<unsigned char>(data, m_width, m_height, faces);
         }
         else {
-            if (m_width/2 == m_height)  {
-                splitFacesFromEquilateral<unsigned char>(data, m_width, m_height, faces);
+            splitFacesHorizontal<unsigned char>(data, m_width, m_height, faces);
+        }
+    }
+    
+    for (int i = 0; i < 6; i++) {
+        faces[i]->upload();
+        sh_samples += faces[i]->calculateSH(SH);
+    }
+
+    // delete[] data;
+    for(int i = 0; i < 6; ++i) {
+        delete[] faces[i]->data;
+        delete faces[i];
+    }
+    delete[] faces;
+
+    for (int i = 0; i < 9; i++) {
+        SH[i] = SH[i] * (32.0f / (float)sh_samples);
+        // cout << SH[i].x << "," << SH[i].y << "," << SH[i].z << endlxw;
+    }
+
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return true;
+}
+
+static float angleBetween(float thetav, float phiv, float theta, float phi) {
+    float cosGamma = sinf(thetav) * sinf(theta) * cosf(phi - phiv) + cosf(thetav) * cosf(theta);
+    return acosf(cosGamma);
+}
+
+float clamp ( float value , float min , float max ) {
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+
+    return value;
+}
+
+bool ofxTextureCube::generate(float _elevation, float _azimuth, float _turbidity, glm::vec3 _groundAlbedo, int _width ) {
+    // Init
+    glGenTextures(1, &m_id);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_id);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#ifndef TARGET_OPENGLES
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+#endif
+
+    int sh_samples = 0;
+
+    m_width = _width;
+    m_height = int(max(_width/2, 1));
+
+    // unsigned char* data = loadPixels(_path, &m_width, &m_height, RGB, false);
+    ofFloatPixels f_pixels;
+    f_pixels.allocate(m_width, m_height, 3);
+
+    // FILAMENT SKYGEN 
+    // https://github.com/google/filament/blob/master/tools/skygen/src/main.cpp
+    //
+    float solarElevation = clamp(_elevation, 0.0f, float(M_PI_2));
+    float sunTheta = float(M_PI_2 - solarElevation);
+    glm::vec3 integral = glm::vec3(0.0f);
+    float sunPhi = 0.0f;
+    bool normalize = true;
+
+    ArHosekSkyModelState* skyState[9] = {
+        arhosek_xyz_skymodelstate_alloc_init(_turbidity, _groundAlbedo.r, solarElevation),
+        arhosek_xyz_skymodelstate_alloc_init(_turbidity, _groundAlbedo.g, solarElevation),
+        arhosek_xyz_skymodelstate_alloc_init(_turbidity, _groundAlbedo.b, solarElevation)
+    };
+
+    glm::mat3 XYZ_sRGB = glm::mat3(
+            3.2404542f, -0.9692660f,  0.0556434f,
+            -1.5371385f,  1.8760108f, -0.2040259f,
+            -0.4985314f,  0.0415560f,  1.0572252f
+    );
+
+    const unsigned int w = m_width;
+    const unsigned int h = m_height;
+    float maxSample = 0.00001f;
+
+    for (unsigned int y = 0; y < m_height; y++) {
+        float v = (y + 0.5f) / m_height;
+        float theta = float(M_PI * v);
+
+        if (theta > M_PI_2)
+            continue;
+            
+        for (unsigned int x = 0; x < m_width; x++) {
+            float u = (x + 0.5f) / m_width;
+            float phi = float(-2.0 * M_PI * u + M_PI + _azimuth);
+
+            float gamma = angleBetween(theta, phi, sunTheta, sunPhi);
+
+            glm::vec3 sample = glm::vec3(
+                arhosek_tristim_skymodel_radiance(skyState[0], theta, gamma, 0),
+                arhosek_tristim_skymodel_radiance(skyState[1], theta, gamma, 1),
+                arhosek_tristim_skymodel_radiance(skyState[2], theta, gamma, 2)
+            );
+
+            if (normalize) {
+                sample *= float(4.0 * M_PI / 683.0);
             }
-            else {
-                splitFacesHorizontal<unsigned char>(data, m_width, m_height, faces);
+
+            maxSample = std::max(maxSample, sample.y);
+            sample = XYZ_sRGB * sample;
+
+            f_pixels.setColor(x, y, ofFloatColor(sample.r, sample.g, sample.b));
+        }
+    }
+
+    // cleanup sky data
+    arhosekskymodelstate_free(skyState[0]);
+    arhosekskymodelstate_free(skyState[1]);
+    arhosekskymodelstate_free(skyState[2]);
+
+    float hdrScale = 1.0f / (normalize ? maxSample : maxSample / 16.0f);
+    // if (normalize)
+    //     maxSample /= float ( 4.0 * M_PI / 683.0 );
+
+    for (unsigned int y = 0; y < h; y++) {
+        for (unsigned int x = 0; x < w; x++) {
+            ofFloatColor color = f_pixels.getColor(x, y);
+
+            if (y >= h / 2) {
+                color.r = _groundAlbedo.r;
+                color.g = _groundAlbedo.g;
+                color.b = _groundAlbedo.b;
             }
+
+            color *= hdrScale;
+
+            f_pixels.setColor(x, y, ofFloatColor(color.r, color.g, color.b));
         }
-        
-        for (int i = 0; i < 6; i++) {
-            faces[i]->upload();
-            sh_samples += faces[i]->calculateSH(SH);
-        }
+    }
 
-        // delete[] data;
-        for(int i = 0; i < 6; ++i) {
-            delete[] faces[i]->data;
-            delete faces[i];
-        }
-        delete[] faces;
+    // LOAD data as equilateral into cube
+    float* data = f_pixels.getData();
 
-    // }
+    // LOAD FACES
+    Face<float> **faces = new Face<float>*[6];
+    splitFacesFromEquilateral<float>(data, m_width, m_height, faces);
+    
+    for (int i = 0; i < 6; i++) {
+        faces[i]->upload();
+        sh_samples += faces[i]->calculateSH(SH);
+    }
 
-    // else if (haveExt(_path, "hdr") || haveExt(_path,"HDR")) {
-    //     float* data = loadFloatPixels(_path, &m_width, &m_height, false);
-
-    //     // LOAD FACES
-    //     Face<float> **faces = new Face<float>*[6];
-
-    //     if (m_height > m_width) {
-    //         splitFacesVertical<float>(data, m_width, m_height, faces);
-
-    //         // adjust NEG_Z face
-    //         if (_vFlip) {
-    //             faces[5]->flipHorizontal();
-    //             faces[5]->flipVertical();
-    //         }
-    //     }
-    //     else {
-
-    //         if (m_width/2 == m_height)  {
-    //             splitFacesFromEquilateral<float>(data, m_width, m_height, faces);
-    //         }
-    //         else {
-    //             splitFacesHorizontal<float>(data, m_width, m_height, faces);
-    //         }
-    //     }
-
-    //     for (int i = 0; i < 6; i++) {
-    //         faces[i]->upload();
-    //         sh_samples += faces[i]->calculateSH(SH);
-    //     }
-
-    //     delete[] data;
-    //     for(int i = 0; i < 6; ++i) {
-    //         delete[] faces[i]->data;
-    //         delete faces[i];
-    //     }
-    //     delete[] faces;
-
-    // }
+    // delete[] data;
+    for(int i = 0; i < 6; ++i) {
+        delete[] faces[i]->data;
+        delete faces[i];
+    }
+    delete[] faces;
 
     for (int i = 0; i < 9; i++) {
         SH[i] = SH[i] * (32.0f / (float)sh_samples);
@@ -334,4 +443,129 @@ void ofxTextureCube::bind() {
 
 void ofxTextureCube::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void ofxTextureCube::draw( ofCamera &_cam ) {
+
+    if (!m_debugInit) {
+        float size = 100.0;
+
+        float vertices[] = {
+            -size,  size,  size,
+            -size, -size,  size,
+            size, -size,  size,
+            size,  size,  size,
+            -size,  size, -size,
+            -size, -size, -size,
+            size, -size, -size,
+            size,  size, -size,
+        };
+
+        unsigned int  indices[] = {
+            0, 1, 2,
+            0, 2, 3,
+            3, 2, 6,
+            3, 6, 7,
+            0, 4, 7,
+            0, 7, 3,
+            4, 6, 7,
+            4, 6, 5,
+            0, 5, 4,
+            0, 5, 1,
+            1, 6, 5,
+            1, 6, 2,
+        };
+
+        m_mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+        m_mesh.addVertices(reinterpret_cast<glm::vec3*>(vertices), 8);
+        m_mesh.addIndices(indices, 36);
+
+        std::string vert;
+        std::string frag;
+
+    #ifdef TARGET_OPENGLES
+//        GLSL 100
+//        ----------------------------------------------
+        string version100 = "#version 100\n";
+        version100 += "#define texture(A,B) texture2D(A,B)\n";
+        
+        vert = version100;
+        frag = version100;
+        
+        if ( !find_id(vertexSrc, "precision ") ) {
+            vert += "#ifdef GL_ES\n\
+precision highp float;\n\
+#endif\n";
+        }
+        
+        if ( !find_id(fragmentSrc, "precision ") ) {
+            frag += "#ifdef GL_ES\n\
+precision highp float;\n\
+#endif\n";
+        }
+#else
+//        GLSL 120
+//        ----------------------------------------------
+        if ( !ofIsGLProgrammableRenderer() ) {
+            vert = "#version 120\n\
+            #define texture(A,B) texture2D(A,B)\n";
+            frag = "#version 120\n";
+        }
+        else {
+//        GLSL 150
+//        ----------------------------------------------
+            vert = "#version 150\n\
+#define attribute in\n\
+#define varying out\n\
+#define texture2D(A,B) texture(A,B)\n\
+#define textureCube(TEX, DIRECTION, LOD) texture(TEX, DIRECTION)\n";
+            frag = "#version 150\n\
+#define varying in\n\
+#define gl_FragColor fragColor\n\
+#define texture2D(A,B) texture(A,B)\n\
+#define textureCube(TEX, DIRECTION, LOD) texture(TEX, DIRECTION)\n\
+out vec4 fragColor;\n";
+        }
+#endif
+
+        vert += "\n\
+uniform mat4    modelViewProjectionMatrix;\n\
+attribute vec4  position;\n\
+varying vec4    v_position;\n\
+\n\
+void main(void) {\n\
+    v_position = position;\n\
+    gl_Position = modelViewProjectionMatrix * vec4(v_position.xyz, 1.0);\n\
+}";
+
+        frag += "\n\
+uniform samplerCube u_cubeMap;\n\
+\n\
+varying vec4    v_position;\n\
+\n\
+void main(void) {\n\
+    vec4 reflection = texture(u_cubeMap, normalize(v_position.xyz));\n\
+    gl_FragColor = reflection;\n\
+}";
+
+        m_shader.setupShaderFromSource(GL_VERTEX_SHADER, vert);
+        m_shader.setupShaderFromSource(GL_FRAGMENT_SHADER, frag);
+        m_shader.linkProgram();
+
+        m_debugInit = true; 
+    }
+
+    ofPushMatrix();
+    // ofRotateX(90);
+    m_shader.begin();
+    // m_shader.setUniformMatrix4f("u_modelViewProjectionMatrix", _cam.getProjectionMatrix() * glm::toMat4(-cam.getOrientationQuat()));
+    
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, getId());
+    m_shader.setUniform1i("u_cubeMap", 1);
+    glActiveTexture(GL_TEXTURE0);
+
+    m_mesh.draw();
+    m_shader.end();
+    ofPopMatrix();
 }

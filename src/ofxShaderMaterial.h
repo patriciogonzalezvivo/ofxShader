@@ -8,6 +8,7 @@ public:
     virtual ~ofxShaderMaterial();
 
     void        setLight(ofLight *_light) { m_light = _light; }
+    void        setSH(ofxTextureCube *_cubemap);
     void        setCubeMap(ofxTextureCube *_cubemap, int _textureIndex = 0 );
     void        setCamera(ofCamera *_camera) { m_camera = _camera; }
     void        setCameraExposure(float _aperture, float _shutterSpeed, float _sensitivity);

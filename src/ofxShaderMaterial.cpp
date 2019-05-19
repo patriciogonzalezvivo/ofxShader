@@ -3,7 +3,7 @@
 ofxShaderMaterial::ofxShaderMaterial() : 
 ofxShader(), 
 m_light(nullptr),
-m_cubemap(nullptr), m_cubemapTextureIndex(0),
+m_cubemap(nullptr), m_cubemapTextureIndex(-1),
 m_camera(nullptr), m_cameraExposure(2.60417e-05), m_cameraEv100(14.9658), m_cameraAperture(16), m_cameraShutterSpeed(1.0f/125.0f), m_cameraSensitivity(100.0f) {
 
     m_uniformsFunctions["u_camera"] = UniformFunction( [this](ofShader* _shader) {
@@ -49,8 +49,9 @@ m_camera(nullptr), m_cameraExposure(2.60417e-05), m_cameraEv100(14.9658), m_came
     // LIGHT UNIFORMS
     //
     m_uniformsFunctions["u_light"] = UniformFunction( [this](ofShader* _shader) {
-        if (m_light != nullptr)
+        if (m_light != nullptr) {
             _shader->setUniform3f("u_light", m_light->getPosition() );
+        }
     });
 
     m_uniformsFunctions["u_lightColor"] = UniformFunction( [this](ofShader* _shader) {
@@ -60,7 +61,7 @@ m_camera(nullptr), m_cameraExposure(2.60417e-05), m_cameraEv100(14.9658), m_came
 
     // IBL UNIFORM
     m_uniformsFunctions["u_cubeMap"] = UniformFunction( [this](ofShader* _shader) {
-        if (m_cubemap != nullptr)
+        if (m_cubemap != nullptr && m_cubemapTextureIndex != -1)
             setUniformTextureCube( "u_cubeMap", *m_cubemap, m_cubemapTextureIndex);
     });
 
@@ -76,6 +77,11 @@ m_camera(nullptr), m_cameraExposure(2.60417e-05), m_cameraEv100(14.9658), m_came
 
 ofxShaderMaterial::~ofxShaderMaterial() {
 
+}
+
+void ofxShaderMaterial::setSH(ofxTextureCube *_cubemap) {
+    m_cubemap = _cubemap;
+    addDefineKeyword("SH_ARRAY u_SH");
 }
 
 void ofxShaderMaterial::setCubeMap( ofxTextureCube *_cubemap, int _textureIndex) { 
