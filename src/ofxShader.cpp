@@ -37,10 +37,12 @@ ofxShader::~ofxShader() {
 
 void ofxShader::addIncludeFolder(const string &_folder) {
     m_includeFolders.push_back(_folder);
+    m_loadShaderNextFrame = true;
 }
 
 void ofxShader::addDefineKeyword(const string &_define) {
     m_defines.push_back(_define);
+    m_loadShaderNextFrame = true;
 }
 
 void ofxShader::delDefineKeyword(const string &_define) {
