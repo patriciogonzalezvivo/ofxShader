@@ -329,9 +329,8 @@ bool ofxTextureCube::generate(float _elevation, float _azimuth, float _turbidity
     // FILAMENT SKYGEN 
     // https://github.com/google/filament/blob/master/tools/skygen/src/main.cpp
     //
-    float solarElevation = clamp(_elevation, 0.0f, float(M_PI_2));
+    float solarElevation = _elevation;
     float sunTheta = float(M_PI_2 - solarElevation);
-    glm::vec3 integral = glm::vec3(0.0f);
     float sunPhi = 0.0f;
     bool normalize = true;
 
@@ -355,7 +354,7 @@ bool ofxTextureCube::generate(float _elevation, float _azimuth, float _turbidity
         float v = (y + 0.5f) / m_height;
         float theta = float(M_PI * v);
 
-        if (theta > M_PI_2)
+        if (theta > M_PI_2) 
             continue;
             
         for (unsigned int x = 0; x < m_width; x++) {
@@ -395,9 +394,12 @@ bool ofxTextureCube::generate(float _elevation, float _azimuth, float _turbidity
             ofFloatColor color = f_pixels.getColor(x, y);
 
             if (y >= h / 2) {
-                color.r = _groundAlbedo.r;
-                color.g = _groundAlbedo.g;
-                color.b = _groundAlbedo.b;
+                // color.r = _groundAlbedo.r;
+                // color.g = _groundAlbedo.g;
+                // color.b = _groundAlbedo.b;
+                color.r *= 0.0;
+                color.g *= 0.0;
+                color.b *= 0.0;
             }
 
             color *= hdrScale;
@@ -558,7 +560,7 @@ void main(void) {\n\
     ofPushMatrix();
     // ofRotateX(90);
     m_shader.begin();
-    // m_shader.setUniformMatrix4f("u_modelViewProjectionMatrix", _cam.getProjectionMatrix() * glm::toMat4(-cam.getOrientationQuat()));
+    // m_shader.setUniformMatrix4f("u_modelViewProjectionMatrix", _cam.getProjectionMatrix() * ofGetCurrentOrientationMatrix() );
     
     glActiveTexture(GL_TEXTURE0 + 1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, getId());
