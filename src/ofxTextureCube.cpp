@@ -394,15 +394,18 @@ bool ofxTextureCube::generate(float _elevation, float _azimuth, float _turbidity
             ofFloatColor color = f_pixels.getColor(x, y);
 
             if (y >= h / 2) {
-                // color.r = _groundAlbedo.r;
-                // color.g = _groundAlbedo.g;
-                // color.b = _groundAlbedo.b;
-                color.r *= 0.0;
-                color.g *= 0.0;
-                color.b *= 0.0;
+                color.r = _groundAlbedo.r;
+                color.g = _groundAlbedo.g;
+                color.b = _groundAlbedo.b;
+                // color.r *= 0.0;
+                // color.g *= 0.0;
+                // color.b *= 0.0;
+            }
+            else {
+                color *= hdrScale;
             }
 
-            color *= hdrScale;
+            
 
             f_pixels.setColor(x, y, ofFloatColor(color.r, color.g, color.b));
         }
