@@ -497,13 +497,13 @@ void ofxTextureCube::draw( ofCamera &_cam ) {
         vert = version100;
         frag = version100;
         
-        if ( !find_id(vertexSrc, "precision ") ) {
+        if ( !find_id(vert, "precision ") ) {
             vert += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";
         }
         
-        if ( !find_id(fragmentSrc, "precision ") ) {
+        if ( !find_id(frag, "precision ") ) {
             frag += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";
