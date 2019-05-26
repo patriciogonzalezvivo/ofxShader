@@ -470,7 +470,7 @@ void ofxTextureCube::draw( ofCamera &_cam ) {
             size,  size, -size,
         };
 
-        unsigned int  indices[] = {
+        ofIndexType indices[] = {
             0, 1, 2,
             0, 2, 3,
             3, 2, 6,
