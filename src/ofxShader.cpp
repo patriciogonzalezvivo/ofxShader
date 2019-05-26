@@ -116,7 +116,7 @@ bool loadFromPath(const string& _path, string* _into, const std::vector<string> 
     return true;
 }
 
-bool find_id(const string& program, const char* id) {
+bool ofxShader::_find_id(const string& program, const char* id) {
     return std::strstr(program.c_str(), id) != 0;
 }
 
@@ -200,9 +200,9 @@ void main() {\n\
     
     // 2. Check active default uniforms
     for (UniformFunctionsList::iterator it = m_uniformsFunctions.begin(); it != m_uniformsFunctions.end(); ++it) {
-        it->second.present = (  find_id(vertexSrc, it->first.c_str()) != 0 || 
-                                find_id(fragmentSrc, it->first.c_str()) != 0 || 
-                                find_id(geometrySrc, it->first.c_str()) != 0 );
+        it->second.present = (  _find_id(vertexSrc, it->first.c_str()) != 0 || 
+                                _find_id(fragmentSrc, it->first.c_str()) != 0 || 
+                                _find_id(geometrySrc, it->first.c_str()) != 0 );
     }
     
     // 3. Add defines
@@ -221,13 +221,13 @@ void main() {\n\
         version_vert_header = version100;
         version_frag_header = version100;
         
-        if ( !find_id(vertexSrc, "precision ") ) {
+        if ( !_find_id(vertexSrc, "precision ") ) {
             version_vert_header += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";
         }
         
-        if ( !find_id(fragmentSrc, "precision ") ) {
+        if ( !_find_id(fragmentSrc, "precision ") ) {
             version_frag_header += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";
