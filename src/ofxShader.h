@@ -57,7 +57,6 @@ public:
     ofEvent<bool>   onChange;
     
 protected:
-    bool                    _find_id(const string& program, const char* id);
     void                    _update(ofEventArgs &e);
 
     vector<string>          m_defines;

@@ -450,6 +450,10 @@ void ofxTextureCube::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+bool __find_id(const string& program, const char* id) {
+    return std::strstr(program.c_str(), id) != 0;
+}
+
 void ofxTextureCube::draw( ofCamera &_cam ) {
 
     if (!m_debugInit) {
@@ -497,13 +501,13 @@ void ofxTextureCube::draw( ofCamera &_cam ) {
         vert = version100;
         frag = version100;
         
-        if ( !_find_id(vert, "precision ") ) {
+        if ( !__find_id(vert, "precision ") ) {
             vert += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";
         }
         
-        if ( !_find_id(frag, "precision ") ) {
+        if ( !__find_id(frag, "precision ") ) {
             frag += "#ifdef GL_ES\n\
 precision highp float;\n\
 #endif\n";

@@ -116,7 +116,7 @@ bool loadFromPath(const string& _path, string* _into, const std::vector<string> 
     return true;
 }
 
-bool ofxShader::_find_id(const string& program, const char* id) {
+bool _find_id(const string& program, const char* id) {
     return std::strstr(program.c_str(), id) != 0;
 }
 
