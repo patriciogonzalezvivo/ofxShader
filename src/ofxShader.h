@@ -3,6 +3,10 @@
 #include "ofMain.h"
 #include <functional>
 #include "ofxTextureCube.h"
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+#include <iostream>
 
 struct UniformFunction {
     UniformFunction() {
@@ -67,7 +71,7 @@ protected:
     double                  m_lastFrame;
 
 private:
-    std::time_t     _getLastModified(ofFile& _file);
+    std::time_t     _getLastModified(ofFile& _file) const;
     bool            _filesChanged();
     
     vector<time_t>  m_fileChangedTimes;
@@ -92,5 +96,3 @@ private:
     bool            m_bWatchingFiles;
     bool            m_loadShaderNextFrame;
 };
-
-
