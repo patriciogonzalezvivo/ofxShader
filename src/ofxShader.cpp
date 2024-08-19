@@ -397,7 +397,23 @@ bool ofxShader::_filesChanged() {
 
 std::time_t ofxShader::_getLastModified( ofFile& _file ) {
     if ( _file.exists() ) {
+#if __cplusplus < 201703L || !defined(__cplusplus)
+        // Before c++17 this used to be the way.
+        // Windows seems not to have __cplusplus defined so default to original way. (?)
         return std::filesystem::last_write_time(_file.path());
+#else
+        // c++17 and above fix
+        std::filesystem::file_time_type ftime = std::filesystem::last_write_time(_file.path());
+
+    #if __cplusplus == 201703L
+        // C++17
+        return decltype(ftime)::clock::to_time_t(ftime);
+    #else
+        // C++20 only (due to std::chrono::system_clock)
+        // Untested, from https://github.com/MaxGi/ofxShader/commit/0ce438b2b8055364f6df2c731db1cd8ba213e521
+        return std::chrono::system_clock::to_time_t(std::chrono::file_clock::to_sys(ftime));
+    #endif
+#endif
     }
     else {
         return 0;
